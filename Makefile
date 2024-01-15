@@ -1,21 +1,21 @@
-.PHONY : all load-bpf clean
+.PHONY : install load-bpf clean
 
 ANDROID_NDK_ROOT = /home/mufanc/Android/Sdk/ndk/26.1.10909125
+MODULE_PATH = /data/adb/modules/bpf-demo
 
 CC     = clang
 CFLAGS = -O2 -nostdlib -D __unused=
 TARGET = bpfel-unknown-none
 
-all: outputs/ebpf_demo.o outputs/map-reader
-
-load-bpf: outputs/ebpf_demo.o
+install: outputs/ebpf_demo.o outputs/map-reader
 	adb push outputs/ebpf_demo.o /data/local/tmp
-	adb shell 'su -c "cp /data/local/tmp/ebpf_demo.o /data/adb/modules/bpf-demo/system/etc/bpf"'
-	adb reboot
+	adb shell 'su -c "cp /data/local/tmp/ebpf_demo.o $(MODULE_PATH)/system/etc/bpf"'
 
-run-map-reader: outputs/map-reader
 	adb push outputs/map-reader /data/local/tmp
-	adb shell 'chmod +x /data/local/tmp/map-reader && su -c /data/local/tmp/map-reader'
+	adb shell 'su -c "killall map-reader; cp /data/local/tmp/map-reader $(MODULE_PATH)/map-reader"'
+
+run: install
+	adb reboot
 
 outputs/map-reader: map-reader/main.cpp
 	cmake -Hmap-reader \
